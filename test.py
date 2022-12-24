@@ -4,15 +4,16 @@
 
 
 # %%
-from laneDetection import LaneDetection
-from line import Line
+
+import Line
+from ClusterLine import ClusterLine
 import math 
 from matplotlib import pyplot as plt
 import cv2
 import numpy as np
 figsize = (10, 10)
 MIN_LINE_LENGTH=50
-FRAME="frame22"
+FRAME="frame2"
 
 def radians_to_degree(theta):
     return  theta*180/np.pi
@@ -34,148 +35,10 @@ def find_degree(x1,y1,x2,y2):
     m=(y2 - y1)/(x2 - x1)
     return math.atan(m)*180/np.pi
 
-def hough_lines(im,canny_im,lines_gap=10):
-    TH = 7
-    r_step = 1
-    t_step = (np.pi) / 180 
-    lines = cv2.HoughLines(canny_im, r_step, t_step, TH)
-    res = im.copy()
-    cluster_lines=[]
-
-
-    for r_t in lines:
-        rho = r_t[0, 0]
-        theta = r_t[0, 1]
-        degree=radians_to_degree(theta)
-       
-        # if 60<degree<=90 or 180>degree>130 :
-        if 0<degree<360:
-            a = np.cos(theta)
-            b = np.sin(theta)
-            print(a, " a")
-            print(b,"b")
-            # x0 = a * rho+500
-            # y0 = b * rho +400
-            # rho=abs(rho)
-            x0 = a * rho
-            
-            y0 =b * rho
-            if rho<0:
-                x1 = int(x0 - 300 * (-b)) +500
-                y1 = int(y0 - 300 * (a)) +750
-                # close part to me
-                x2 = int(x0 - 700 * (-b)) +500
-                y2 = int(y0 - 700 * (a)) +750
-
-            else:
-                x1 = int(x0 + 100 * (-b)) +500
-                y1 = int(y0 + 100 * (a)) +750
-
-                x2 = int(x0 - 250 * (-b))+500
-                y2 = int(y0 - 250 * (a))+750
-
-
-            if len(cluster_lines)==0:
-                line=Line(gap=100)
-                line.add(x1,y1,x2,y2,degree)
-                cluster_lines.append(line)
-            else:
-                added_line=False
-                for line in cluster_lines:
-                    if line.is_connected(x1,y1,x2,y2):
-                        # print("connected")
-                        line.add(x1,y1,x2,y2,degree)
-                        added_line=True
-                        break
-                if not added_line:
-                    new_line=Line(gap=100)
-                    new_line.add(x1,y1,x2,y2,degree)
-                    cluster_lines.append(new_line)
-                    
-
-    print(len(cluster_lines))
-    for line in cluster_lines:
-        print("degree: ",line.degree())
-        print("x1 ,y1 ",line.x1(),line.y1())
-        print("x2 ,y2 ",line.x2(),line.y2())
-
-        res = cv2.line(res, (line.x1(), line.y1()), (line.x2(), line.y2()), (0, 0, 255), thickness=10)
-
-            
-                
-            
-    return res
-
-def hough_lines2(im,canny_im,lines_gap=10):
-    TH = 40
-    r_step = 1
-    t_step = (np.pi) / 180 
-    lines = cv2.HoughLines(canny_im, r_step, t_step, TH)
-    res = im.copy()
-
-    for r_t in lines:
-        rho = r_t[0, 0]
-        theta = r_t[0, 1]
-       
-        if theta*180/np.pi<70 or theta*180/np.pi>100 :
-            a = np.cos(theta)
-            b = np.sin(theta)
-            # x0 = a * rho+500
-            # y0 = b * rho +400
-            # rho=abs(rho)
-            x0 = a * rho
-            
-            y0 =b * rho
-            if rho<0:
-                x1 = int(x0 - 300 * (-b)) +630
-                y1 = int(y0 - 300 * (a)) +750
-                # close part to me
-                x2 = int(x0 - 700 * (-b)) +630
-                y2 = int(y0 - 700 * (a)) +750
-
-            else:
-                x1 = int(x0 + 100 * (-b)) +630
-                y1 = int(y0 + 100 * (a)) +750
-                x2 = int(x0 - 250 * (-b))+630
-                y2 = int(y0 - 250 * (a))+750
-            print(x1,y1,"point one")
-            print(x2,y2,"point two")
-
-            res = cv2.line(res, (x1,y1), (x2, y2), (0, 0, 255), thickness=10)
 
 
 
 
-            
-                
-            
-    return res
-
-def hough_lines_3(im,canny_im,TH=20):
-    TH = TH
-    r_step = 1
-    t_step = (np.pi) / 180 
-    lines = cv2.HoughLines(canny_im, r_step, t_step, TH)
-    res = im.copy()
-    cluster_lines=[]
-
-
-    for r_t in lines:
-        rho = r_t[0, 0]
-        theta = r_t[0, 1]
-        degree=radians_to_degree(theta)
-        a = np.cos(theta)
-        b = np.sin(theta)
-        x0 = a * rho        
-        y0 =b * rho
-        x1 = int(x0 + 1000 * (-b))
-        y1 = int(y0 + 1000 * (a))
-        x2 = int(x0 - 1000 * (-b))
-        y2 = int(y0 - 1000 * (a))
-        res = cv2.line(res, (x1, y1), (x2, y2), (0, 0, 255), thickness=10)
-         
-            
-    return res
 def hough_lines_P(im, canny_im, x_offset=0, y_offset=0):
 
     cluster_lines=[]
@@ -214,26 +77,13 @@ def hough_lines_P(im, canny_im, x_offset=0, y_offset=0):
 
             degree=find_degree(new_x1,new_y1,new_x2,new_y2)
             if degree<90 or degree>95:
-                current_line=Line(gap=100)
+                current_line=ClusterLine(gap=100)
                 # current_line.add(x1,y1,x2,y2,degree)
                 current_line.add(new_x1,new_y1,new_x2,new_y2,degree)
                 add_line(cluster_lines,current_line)
          
 
-    # for line in lines:
-    #     x1, y1, x2, y2 = line[0]
-    #     degree=find_degree(x1,y1,x2,y2)
-    #     # if degree<0:
-    #     #     degree=180+degree
-    #     # degree=abs(degree-180)
-    #     if degree<90 or degree>95:
-    #         current_line=Line(gap=50)
-    #         current_line.add(x1,y1,x2,y2,degree)
-    #         add_line(cluster_lines,current_line)
 
-
-    # for line in cluster_lines:
-    #     find_slope(line.x1(),line.y1(),line.x2(),line.y2())
 
 
 
@@ -284,7 +134,7 @@ def diplay_image(im,title):
 # ## open frame
 
 
-im3 = cv2.imread("C:\\Users\\97254\\Desktop\\Computer Vision\\project_env\\lane detection\\"+FRAME+".jpg")
+im3 = cv2.imread("C:\\Users\\97254\\Desktop\\Computer Vision\\project_env\\lane detection\\frames\\"+FRAME+".jpg")
 im3 = cv2.cvtColor(im3, cv2.COLOR_BGR2RGB)
 
 
@@ -343,24 +193,7 @@ mag_im = cv2.Canny(blur_im,100,200)
 
 diplay_image(mag_im,"edge image")
 
-# %% [markdown]
-# ## hough lines basicss
-# hough_image=hough_lines_3(cropped_im,mag_im,10000)
-# plt.figure(figsize=figsize)
-# plt.imshow(hough_image)
-# plt.title("hough lines")
-# plt.show()
 
-
-
-# %% [markdown]
-# ## hough lines
-# hough_image=hough_lines(cropped_im,mag_im)
-# hough_image=hough_lines(im3,mag_im)
-# plt.figure(figsize=figsize)
-# plt.imshow(hough_image)
-# plt.title("hough lines")
-# plt.show()
 
 # %% [markdown]
 # ## hough lines P cropped image
