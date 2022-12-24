@@ -1,8 +1,7 @@
 import cv2
-import math
+from ClusterLine import ClusterLine
 import numpy as np
-from line import Line
-import datetime
+from Line import Line
 from matplotlib import pyplot as plt
 
 # consts
@@ -24,10 +23,8 @@ class RoadDetect:
         self.__switchLaneMessage=None
         
         self.__lastLeftLane = None
-        self.__lastLeftLaneSlope = None
-
         self.__lastRightLane = None
-        self.__lastRightLaneSlope = None
+
 
         self.__cropped_image = None
         
@@ -115,12 +112,11 @@ class RoadDetect:
             if slope<-MIN_SLOPE or slope>MIN_SLOPE:
                 new_x1,new_y1,new_x2,new_y2=self.__get_new_point(x1,x2,y1,y2,max_x_value,slope)
                 degree=Line.find_degree(new_x1,new_y1,new_x2,new_y2)
-                #350,50
                 if (Line.find_distance(new_x1,new_y1,new_x2,new_y2)<=350 and abs(new_x1-new_x2)<=350 and abs(new_y1-new_y2)>=70 ):
                     if not (min(new_x1,new_x2)<450 and max(new_x1,new_x2)>450):
                          if not (min(new_x1,new_x2)>800 and max(new_x1,new_x2)>800):
                             if not (min(new_x1,new_x2)<200 and max(new_x1,new_x2)<200):
-                                current_line=Line(gap=100)
+                                current_line=ClusterLine(gap=100)
                                 current_line.add(new_x1,new_y1,new_x2,new_y2,degree)
                                 self.__add_line(cluster_lines,current_line)
 
@@ -221,22 +217,7 @@ class RoadDetect:
             self.__linesDetected=self.__find_lines(lines,max_x_value)
             self.__remove_intersected_lines()
             self.__best_fit_two_lane(res)
-            if self.__lastLeftLane:
-                res = cv2.line(res, (self.__lastLeftLane.x1(), self.__lastLeftLane.y1()),
-                                    (self.__lastLeftLane.x2(), self.__lastLeftLane.y2()),
-                                     (0, 0, 255), thickness=10)
-                res=cv2.putText(res, str(self.__lastLeftLane.slope()),
-                        (self.__lastLeftLane.x1(), self.__lastLeftLane.y1()), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3, 2)
-            
-            if self.__lastRightLane:
-                res = cv2.line(res, (self.__lastRightLane.x1(), self.__lastRightLane.y1()),
-                                    (self.__lastRightLane.x2(), self.__lastRightLane.y2()),
-                                    (0, 0, 255), thickness=10)
-                res=cv2.putText(res,str(self.__lastRightLane.slope()),
-                        (self.__lastRightLane.x1(), self.__lastRightLane.y1()), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3, 2)
-
-            # for line in self.__linesDetected:
-            #     res = cv2.line(res, (line.x1(), line.y1()), (line.x2(), line.y2()), (0, 0, 255), thickness=10)
+            self.__write_lines(res)
 
         return res
 
